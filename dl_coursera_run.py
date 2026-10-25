@@ -271,8 +271,35 @@ def main():
     )
     parser.add_argument(
         '--no-video',
+        dest='no_video',
         action='store_true',
-        help='skip downloading video files (subtitles and other content are still downloaded)',
+        default=True,
+        help='skip downloading video files (subtitles and other content are still downloaded) [default]',
+    )
+    parser.add_argument(
+        '--video',
+        dest='no_video',
+        action='store_false',
+        help='download video files',
+    )
+    parser.add_argument(
+        '--dryrun',
+        action='store_false',
+        dest='dryrun',
+        default=True,
+        help='crawl and list download tasks without actually downloading files [default]',
+    )
+    parser.add_argument(
+        '--no-dryrun',
+        action='store_true',
+        dest='dryrun',
+        help='actually download files (same as --download)',
+    )
+    parser.add_argument(
+        '--download',
+        action='store_true',
+        default=False,
+        help='actually download files',
     )
     parser.add_argument(
         '--version', action='version', version='%%(prog)s %s' % dl_coursera.app_version
@@ -310,7 +337,10 @@ def main():
 
     dl_tasks = gather_dl_tasks(outdir, soc, args['subtitles'], args['no_video'])
 
-    download(dl_tasks)
+    if args['download'] or not args['dryrun']:
+        download(dl_tasks)
+    else:
+        print(f'Dry run: {len(dl_tasks)} file(s) would be downloaded.')
 
     sys.stderr.flush()
     print('Done :-)')

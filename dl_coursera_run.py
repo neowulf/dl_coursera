@@ -340,6 +340,11 @@ def main():
     if args['download'] or not args['dryrun']:
         download(dl_tasks)
     else:
+        paths = sorted(
+            os.path.relpath(task['filename'], outdir) for task in dl_tasks
+        )
+        for p in paths:
+            print(f'  {p}')
         print(f'Dry run: {len(dl_tasks)} file(s) would be downloaded.')
 
     sys.stderr.flush()

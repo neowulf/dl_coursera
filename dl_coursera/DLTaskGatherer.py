@@ -16,9 +16,9 @@ def _sanitize_filename(s):
     return re.sub(r'[<>:"/\\|?*]', '_', s)
 
 
-def _shorten_slug(x):
-    if len(x['slug']) > 40:
-        x['slug'] = x['slug'][:40]
+def _shorten_name(x):
+    if len(x['name']) > 40:
+        x['name'] = x['name'][:40]
 
 
 def _normalize_subtitle_lang(lang):
@@ -113,7 +113,7 @@ class DLTaskGatherer:
                 item = ref['item']
                 if item['type'] == 'CML':
                     refid2node[ref['id']] = self._et.see(
-                        '%02d - %s.html' % (i + 1, ref['slug'])
+                        '%02d - %s.html' % (i + 1, _sanitize_filename(ref['name']))
                     )
 
             def fn_a(a):
@@ -138,19 +138,19 @@ class DLTaskGatherer:
                     self._gather_cml(item, i, ref)
 
     def _gather_module(self, module, i):
-        _shorten_slug(module)
+        _shorten_name(module)
 
         with self._et:
-            self._down(module['slug'], i)
+            self._down(_sanitize_filename(module['name']), i)
 
             for _i, lesson in enumerate(module['lessons']):
                 self._gather_lesson(lesson, _i)
 
     def _gather_lesson(self, lesson, i):
-        _shorten_slug(lesson)
+        _shorten_name(lesson)
 
         with self._et:
-            self._down(lesson['slug'], i)
+            self._down(_sanitize_filename(lesson['name']), i)
 
             for _i, item in enumerate(lesson['items']):
                 if item['type'] == 'Lecture':
@@ -161,10 +161,10 @@ class DLTaskGatherer:
                     self._gather_quiz(item, _i)
 
     def _gather_lecture(self, lecture, i):
-        _shorten_slug(lecture)
+        _shorten_name(lecture)
 
         with self._et:
-            self._down(lecture['slug'], i)
+            self._down(_sanitize_filename(lecture['name']), i)
 
             for _i, video in enumerate(lecture['videos']):
                 self._gather_video(video, _i, lecture['name'])
@@ -255,10 +255,10 @@ class DLTaskGatherer:
         return selected
 
     def _gather_supplement(self, supplement, i):
-        _shorten_slug(supplement)
+        _shorten_name(supplement)
 
         with self._et:
-            self._down(supplement['slug'], i)
+            self._down(_sanitize_filename(supplement['name']), i)
 
             for _i, item in enumerate(supplement['items']):
                 if item['type'] == 'CML':
@@ -282,7 +282,7 @@ class DLTaskGatherer:
             title='%s' % supplement['name'],
         ).encode('UTF-8')
         self._add_file_task(
-            data, self._see('%02d - %s.html' % (i + 1, supplement['slug']))
+            data, self._see('%02d - %s.html' % (i + 1, _sanitize_filename(supplement['name'])))
         )
 
         for asset in cml['assets']:

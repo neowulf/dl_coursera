@@ -44,13 +44,13 @@ def _options_for_cache(args):
     return {'quiz': args['quiz']}
 
 
-def _parse_subtitles(value):
+def _parse_langs(value, flag='--subtitles'):
     if not value:
         return None
     langs = value.split(',')
     if any(not lang or lang != lang.strip() for lang in langs):
         raise argparse.ArgumentTypeError(
-            '--subtitles must be comma-separated language codes without spaces'
+            f'{flag} must be comma-separated language codes without spaces'
         )
     return langs
 
@@ -166,9 +166,9 @@ def crawl(cookies_file=None, cookie_string=None, slug=None, outdir=None, is_spec
     return soc
 
 
-def gather_dl_tasks(outdir, soc, subtitle_langs=None, no_video=False):
+def gather_dl_tasks(outdir, soc, subtitle_langs=None, transcript_langs=None, no_video=False):
     return DLTaskGatherer(
-        soc=soc, outdir=outdir, subtitle_langs=subtitle_langs, no_video=no_video
+        soc=soc, outdir=outdir, subtitle_langs=subtitle_langs, transcript_langs=transcript_langs, no_video=no_video
     ).gather()
 
 
@@ -262,11 +262,22 @@ def main():
         '--subtitles',
         metavar='LANGUAGES',
         default=None,
-        type=_parse_subtitles,
+        type=lambda v: _parse_langs(v, '--subtitles'),
         help=(
             'comma-separated subtitle language codes without spaces, e.g. `en,zh-CN\'. '
             'Typical codes: en, zh-CN, es, fr, de, pt-BR, ja, ko, ru, it, ar, hi. '
             'Default: download the only available language; otherwise English if available.'
+        ),
+    )
+    parser.add_argument(
+        '--transcripts',
+        metavar='LANGUAGES',
+        default=None,
+        type=lambda v: _parse_langs(v, '--transcripts'),
+        help=(
+            'comma-separated transcript language codes without spaces, e.g. `en,zh-CN\'. '
+            'Downloads plain text transcript files (.txt) independently of subtitles. '
+            'When combined with --subtitles for the same language, both .srt and .txt files are downloaded.'
         ),
     )
     parser.add_argument(
@@ -335,7 +346,7 @@ def main():
         include_quiz=args['quiz'],
     )
 
-    dl_tasks = gather_dl_tasks(outdir, soc, args['subtitles'], args['no_video'])
+    dl_tasks = gather_dl_tasks(outdir, soc, args['subtitles'], args['transcripts'], args['no_video'])
 
     if args['download'] or not args['dryrun']:
         download(dl_tasks)

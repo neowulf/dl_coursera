@@ -80,7 +80,7 @@ class DLTaskGatherer:
         if i is None:
             self._et.down(s)
         else:
-            self._et.down('%02d@%s' % (i + 1, s))
+            self._et.down('%02d - %s' % (i + 1, s))
 
     def _see(self, s):
         return self._et.see(s).abspath()[1:]
@@ -113,7 +113,7 @@ class DLTaskGatherer:
                 item = ref['item']
                 if item['type'] == 'CML':
                     refid2node[ref['id']] = self._et.see(
-                        '%02d@%s.html' % (i + 1, ref['slug'])
+                        '%02d - %s.html' % (i + 1, ref['slug'])
                     )
 
             def fn_a(a):
@@ -174,7 +174,7 @@ class DLTaskGatherer:
 
     def _gather_video(self, video, i, title=None):
         if not self._no_video:
-            video_node = self._et.see('%02d@.mp4' % (i + 1))
+            video_node = self._et.see('%02d - .mp4' % (i + 1))
             self._add_dl_task(video['url_video'], video_node.abspath()[1:])
             self._playlist_entries.append((video_node, title))
 
@@ -185,9 +185,9 @@ class DLTaskGatherer:
         selected = self._select_subtitles(subtitles or {})
         for lang, url in selected:
             if len(selected) == 1:
-                filename = '%02d@.srt' % (i + 1)
+                filename = '%02d - .srt' % (i + 1)
             else:
-                filename = '%02d@.%s.srt' % (i + 1, lang)
+                filename = '%02d - .%s.srt' % (i + 1, lang)
             self._add_dl_task(url, self._see(filename))
 
     def _gather_playlist(self):
@@ -258,7 +258,7 @@ class DLTaskGatherer:
             title='%s' % supplement['name'],
         ).encode('UTF-8')
         self._add_file_task(
-            data, self._see('%02d@%s.html' % (i + 1, supplement['slug']))
+            data, self._see('%02d - %s.html' % (i + 1, supplement['slug']))
         )
 
         for asset in cml['assets']:

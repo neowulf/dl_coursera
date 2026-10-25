@@ -26,13 +26,14 @@ def _normalize_subtitle_lang(lang):
 
 
 class DLTaskGatherer:
-    def __init__(self, *, soc, outdir, subtitle_langs=None):
+    def __init__(self, *, soc, outdir, subtitle_langs=None, no_video=False):
         # "soc" means "sepc or course"
         assert soc['type'] in ['Spec', 'Course']
 
         self._soc = soc
         self._outdir = outdir
         self._subtitle_langs = subtitle_langs
+        self._no_video = no_video
 
         self._et = ExploringTree()
         self._resource_node = self._et.see('%s/resource' % self._soc['slug'])
@@ -172,9 +173,10 @@ class DLTaskGatherer:
                 self._gather_asset(asset)
 
     def _gather_video(self, video, i, title=None):
-        video_node = self._et.see('%02d@.mp4' % (i + 1))
-        self._add_dl_task(video['url_video'], video_node.abspath()[1:])
-        self._playlist_entries.append((video_node, title))
+        if not self._no_video:
+            video_node = self._et.see('%02d@.mp4' % (i + 1))
+            self._add_dl_task(video['url_video'], video_node.abspath()[1:])
+            self._playlist_entries.append((video_node, title))
 
         subtitles = video.get('subtitles')
         if not subtitles and video.get('url_subtitle') is not None:

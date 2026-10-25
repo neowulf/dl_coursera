@@ -88,14 +88,14 @@ def _refresh_cache(outdir, slug, args):
         json.dump(options, ofs, indent=4)
 
 
-def crawl(cookies_file, slug, outdir, is_spec, include_quiz=False):
+def crawl(cookies_file=None, cookie_string=None, slug=None, outdir=None, is_spec=False, include_quiz=False):
     file_pkl = _file_pkl_crawl(outdir, slug)
     if os.path.exists(file_pkl):
         with open(file_pkl, 'rb') as ifs:
             return pickle.load(ifs)
 
     with requests.Session() as sess:
-        login(sess, cookies_file=cookies_file)
+        login(sess, cookies_file=cookies_file, cookie_string=cookie_string)
 
         # Check whether the specialization/course exists
 
@@ -151,6 +151,7 @@ def crawl(cookies_file, slug, outdir, is_spec, include_quiz=False):
                 ts=ts,
                 sess=sess,
                 cookies_file=cookies_file,
+                cookie_string=cookie_string,
                 include_quiz=include_quiz,
             )
             soc = crawler.crawl(slug=slug, is_spec=is_spec)
@@ -165,9 +166,9 @@ def crawl(cookies_file, slug, outdir, is_spec, include_quiz=False):
     return soc
 
 
-def gather_dl_tasks(outdir, soc, subtitle_langs=None):
+def gather_dl_tasks(outdir, soc, subtitle_langs=None, no_video=False):
     return DLTaskGatherer(
-        soc=soc, outdir=outdir, subtitle_langs=subtitle_langs
+        soc=soc, outdir=outdir, subtitle_langs=subtitle_langs, no_video=no_video
     ).gather()
 
 
@@ -234,9 +235,17 @@ def main():
     )
     parser.add_argument(
         '--cookies',
-        required=True,
+        required=False,
+        default=None,
         metavar='COOKIES_FILE',
-        help='path of the cookies file',
+        help='path of the cookies file (Netscape format)',
+    )
+    parser.add_argument(
+        '--cookie',
+        required=False,
+        default=None,
+        metavar='COOKIE_VALUE',
+        help='raw cookie header value (semicolon-separated name=value pairs)',
     )
     parser.add_argument(
         '--outdir', default='.', help="the output directory. Default: `.'"
@@ -261,11 +270,19 @@ def main():
         ),
     )
     parser.add_argument(
+        '--no-video',
+        action='store_true',
+        help='skip downloading video files (subtitles and other content are still downloaded)',
+    )
+    parser.add_argument(
         '--version', action='version', version='%%(prog)s %s' % dl_coursera.app_version
     )
     parser.add_argument('slug', help='slug of the specialization/course')
 
     args = vars(parser.parse_args())
+
+    if args['cookies'] is None and args['cookie'] is None:
+        parser.error('at least one of --cookies or --cookie is required')
 
     latest_version = get_latest_app_version()
     current_version = get_current_app_version()
@@ -282,9 +299,16 @@ def main():
     config_logger(_file_log(outdir, slug))
     _refresh_cache(outdir, slug, args)
 
-    soc = crawl(args['cookies'], slug, outdir, args['spec'], args['quiz'])
+    soc = crawl(
+        cookies_file=args['cookies'],
+        cookie_string=args['cookie'],
+        slug=slug,
+        outdir=outdir,
+        is_spec=args['spec'],
+        include_quiz=args['quiz'],
+    )
 
-    dl_tasks = gather_dl_tasks(outdir, soc, args['subtitles'])
+    dl_tasks = gather_dl_tasks(outdir, soc, args['subtitles'], args['no_video'])
 
     download(dl_tasks)
 

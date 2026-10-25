@@ -733,13 +733,18 @@ class Crawler:
                     if url_subtitle:
                         subtitles[lang] = URL_ROOT + url_subtitle
 
+                transcripts = {}
+                for lang, url_transcript in (_['subtitlesTxt'] or {}).items():
+                    if url_transcript:
+                        transcripts[lang] = URL_ROOT + url_transcript
+
                 _ = _['sources']['byResolution']
                 # choose the video with highest resolution
                 url_video = _[sorted(_.keys())[-1]]
                 url_video = url_video['mp4VideoUrl']
 
                 lecture['videos'].append(
-                    Video(url_video=url_video, subtitles=subtitles)
+                    Video(url_video=url_video, subtitles=subtitles, transcripts=transcripts)
                 )
 
             # lecture assets

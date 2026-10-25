@@ -182,13 +182,37 @@ class DLTaskGatherer:
         if not subtitles and video.get('url_subtitle') is not None:
             subtitles = {'en': video['url_subtitle']}
 
+        transcripts = video.get('transcripts') or {}
+
         selected = self._select_subtitles(subtitles or {})
         for lang, url in selected:
-            if len(selected) == 1:
-                filename = '%02d - .srt' % (i + 1)
+            # Determine if multiple languages are selected for multi-lang naming
+            multi_lang = len(selected) > 1
+
+            # Prefer transcript (.txt) over subtitle (.srt) for this language
+            transcript_url = None
+            if lang in transcripts:
+                transcript_url = transcripts[lang]
+            # Also check normalized key
+            if not transcript_url:
+                key = _normalize_subtitle_lang(lang)
+                for tlang, turl in transcripts.items():
+                    if _normalize_subtitle_lang(tlang) == key:
+                        transcript_url = turl
+                        break
+
+            if transcript_url:
+                ext = 'txt'
+                download_url = transcript_url
             else:
-                filename = '%02d - .%s.srt' % (i + 1, lang)
-            self._add_dl_task(url, self._see(filename))
+                ext = 'srt'
+                download_url = url
+
+            if multi_lang:
+                filename = '%02d - .%s.%s' % (i + 1, lang, ext)
+            else:
+                filename = '%02d - .%s' % (i + 1, ext)
+            self._add_dl_task(download_url, self._see(filename))
 
     def _gather_playlist(self):
         if not self._playlist_entries:
